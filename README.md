@@ -1,5 +1,5 @@
 # 💫 About Me:
-🥇 Sou um profissional organizado e disciplinado…<br>🎮 Gamer e otaku<br>🎬 Editor de vídeos e imagens profissional<br>💻 Programador front-end<br>🧩 Futuro progamador python
+🥇 I am an organized and disciplined professional…<br>🎮 Gamer and Otaku<br>🎬 Professional video, Image and VFX editor<br>💻 Front End Developer<br>🧩 Future Python Developer
 
 ## 🌐 Socials:
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://www.instagram.com/guizeroum/) 
