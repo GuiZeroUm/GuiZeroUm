@@ -4,7 +4,7 @@
 ## 🌐 Socials:
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://www.instagram.com/guizeroum/) 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/guilherme-santos-89555a245/) 
-[![Twitter]([https://img.shields.io/badge/Twitch-%239146FF.svg?logo=Twitch&logoColor=white](https://img.shields.io/twitter/follow/:user))]([https://www.twitch.tv/zeroumgui](https://twitter.com/GuiZeroUm)) 
+[![Twitter]([[https://img.shields.io/badge/Twitch-%239146FF.svg?logo=Twitch&logoColor=white](https://img.shields.io/twitter/follow/:user)](https://camo.githubusercontent.com/2cbca4be42d81c6833fd417d74f5322e80861326d03d52289924138947be7b4e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f547769747465722d2532333144413146322e7376673f6c6f676f3d54776974746572266c6f676f436f6c6f723d7768697465))]([https://www.twitch.tv/zeroumgui](https://twitter.com/GuiZeroUm)) 
 [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?logo=YouTube&logoColor=white)](https://www.youtube.com/channel/UCt8d71v9eNjtRbjD6Zy2GHg) 
 
 # 💻 Tech Stack:
