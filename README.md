@@ -4,7 +4,7 @@
 ## 🌐 Socials:
 [![Instagram](https://img.shields.io/badge/Instagram-%23E4405F.svg?logo=Instagram&logoColor=white)](https://www.instagram.com/guizeroum/) 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/guilherme-santos-89555a245/) 
-[![Twitch](https://img.shields.io/badge/Twitch-%239146FF.svg?logo=Twitch&logoColor=white)](https://www.twitch.tv/zeroumgui) 
+[![Twitter]([https://img.shields.io/badge/Twitch-%239146FF.svg?logo=Twitch&logoColor=white](https://img.shields.io/twitter/follow/:user))]([https://www.twitch.tv/zeroumgui](https://twitter.com/GuiZeroUm)) 
 [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?logo=YouTube&logoColor=white)](https://www.youtube.com/channel/UCt8d71v9eNjtRbjD6Zy2GHg) 
 
 # 💻 Tech Stack:
