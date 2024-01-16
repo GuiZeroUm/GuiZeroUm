@@ -9,7 +9,7 @@
 ## 🌐 Socials:
 <a href="https://www.instagram.com/guizeroum/"><img src="https://img.shields.io/badge/-@guizeroum_-E4405F?style=flat-square&logo=Instagram&logoColor=white"/></a>
 <a href="https://www.linkedin.com/in/guizeroum/"><img src="https://img.shields.io/badge/-Guilherme%20Santos-0077B5?style=flat-square&logo=Linkedin&logoColor=white"/></a>
-<a href="https://www.linkedin.com/in/guizeroum/"><img src="https://img.shields.io/badge/-Portfólio-3423A6?style=flat-square&logo=Google-Chrome&logoColor=white"/></a>
+<a href="https://devguizeroum.vercel.app/"><img src="https://img.shields.io/badge/-Portfólio-3423A6?style=flat-square&logo=Google-Chrome&logoColor=white"/></a>
 
 <h2> 🛠 &nbsp;Tech Stack</h2>
 <h3>💻 &nbsp;Front-end:</h3>
