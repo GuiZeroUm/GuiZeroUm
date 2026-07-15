@@ -1,30 +1,56 @@
-# 💫 About Me:
-🥇 I am an organized and disciplined professional…<br>
-🎮 Gamer and Otaku<br>
-🎬 Professional video and VFX editor<br>
-💻 Front End developer<br>
-🧩 Future Full Stack Python Developer<br>
-📚 Full Stack student at ebac and UX Design at google
+<p align="center">
+  <img src="./assets/farm-contributions.svg" width="100%" alt="Fazenda em pixel art que transforma as contribuições de GuiZeroUm no GitHub em plantações" />
+</p>
 
-## 🌐 Socials:
-<a href="https://www.instagram.com/guizeroum/"><img src="https://img.shields.io/badge/-@guizeroum_-E4405F?style=flat-square&logo=Instagram&logoColor=white"/></a>
-<a href="https://www.linkedin.com/in/guizeroum/"><img src="https://img.shields.io/badge/-Guilherme%20Santos-0077B5?style=flat-square&logo=Linkedin&logoColor=white"/></a>
-<a href="https://devguizeroum.vercel.app/"><img src="https://img.shields.io/badge/-Portfólio-3423A6?style=flat-square&logo=Google-Chrome&logoColor=white"/></a>
+<p align="center">
+  <sub>🌱 Cada terreno representa um dia: terra arada significa nenhuma contribuição, enquanto o trigo cresce conforme a atividade aumenta. Atualizado automaticamente todos os dias.</sub>
+</p>
 
-<h2> 🛠 &nbsp;Tech Stack</h2>
-<h3>💻 &nbsp;Front-end:</h3>
+<h1 align="center">Olá, eu sou o Guilherme Santos 👋</h1>
 
-![HTML](https://img.shields.io/badge/-HTML-333333?style=flat&logo=HTML5)
-![CSS](https://img.shields.io/badge/-CSS-333333?style=flat&logo=CSS3&logoColor=1572B6)
-![JavaScript](https://img.shields.io/badge/-JavaScript-333333?style=flat&logo=javascript)
+<p align="center">
+  Desenvolvedor Full Stack focado em criar <strong>produtos SaaS</strong>, <strong>automações</strong> e <strong>sistemas de gestão</strong> que resolvem problemas reais.
+</p>
 
-<h3>⚙️ &nbsp;Back-end e banco de dados:</h3>
+<p align="center">
+  <a href="https://www.linkedin.com/in/guizeroum/"><img alt="LinkedIn" src="https://img.shields.io/badge/LinkedIn-Guilherme%20Santos-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white"></a>
+  <a href="https://www.instagram.com/guizeroum/"><img alt="Instagram" src="https://img.shields.io/badge/Instagram-@guizeroum-E4405F?style=for-the-badge&logo=instagram&logoColor=white"></a>
+  <a href="https://devguizeroum.vercel.app/"><img alt="Portfólio" src="https://img.shields.io/badge/Portfólio-Acessar-3423A6?style=for-the-badge&logo=googlechrome&logoColor=white"></a>
+</p>
 
-<h4>🚧 Em construção</h4>
+## 👨‍💻 Sobre mim
 
-<h3>⚙️ &nbsp;Edição de vídeo e VFX</h3>
+Atuo no desenvolvimento de aplicações web completas, da modelagem e das regras de negócio até interfaces responsivas e deploy. Tenho experiência profissional com **Python e Django** e atualmente também trabalho com **PHP e Laravel**, além de desenvolver interfaces com **Vue, React e Tailwind CSS**.
 
-![Adobe After Effects](https://img.shields.io/badge/Adobe%20After%20Effects-9999FF.svg?style=for-the-badge&logo=Adobe%20After%20Effects&logoColor=white)
-![Adobe Lightroom](https://img.shields.io/badge/Adobe%20Lightroom-31A8FF.svg?style=for-the-badge&logo=Adobe%20Lightroom&logoColor=white) 
-![Adobe Photoshop](https://img.shields.io/badge/adobephotoshop-%2331A8FF.svg?style=for-the-badge&logo=adobephotoshop&logoColor=white) 
-![Adobe Premiere Pro](https://img.shields.io/badge/Adobe%20Premiere%20Pro-9999FF.svg?style=for-the-badge&logo=Adobe%20Premiere%20Pro&logoColor=white)
+Meu foco está em arquitetura sustentável, código limpo, integrações e produtos que possam crescer como SaaS — especialmente plataformas multi-tenant, sistemas clínicos, CRMs e automações de processos.
+
+## 🚜 O que estou construindo
+
+- **Sistemas SaaS multi-tenant**, com isolamento de dados, planos, permissões e cobrança recorrente.
+- **Plataformas de gestão clínica**, integrando agenda, pacientes, prontuário, financeiro, Google Calendar e WhatsApp.
+- **Automações empresariais**, reduzindo tarefas manuais e transformando processos repetitivos em fluxos supervisionados.
+- **Interfaces modernas**, responsivas e orientadas à experiência real de uso.
+
+## 🧰 Tecnologias
+
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=python,django,php,laravel,js,ts,react,vue,tailwind,bootstrap,postgres,mongodb,docker,git,github,linux&perline=8" alt="Tecnologias utilizadas por Guilherme Santos" />
+</p>
+
+## 🌾 Como funciona esta fazenda
+
+A área central da arte é um calendário real de **53 semanas × 7 dias**. O workflow consulta suas contribuições pelo GitHub GraphQL, converte cada nível de atividade em um estágio da plantação e redesenha a fazenda automaticamente:
+
+| Atividade no dia | Representação |
+|:--|:--|
+| Nenhuma contribuição | Terra arada |
+| Baixa atividade | Pequeno broto |
+| Atividade moderada | Plantação jovem |
+| Alta atividade | Trigo verde desenvolvido |
+| Atividade muito alta | Trigo dourado pronto para colheita |
+
+O gerador, o workflow e toda a lógica visual estão disponíveis neste próprio repositório de perfil.
+
+<p align="center">
+  <em>Construindo um pouco todos os dias — uma contribuição, uma colheita. 🌾</em>
+</p>
