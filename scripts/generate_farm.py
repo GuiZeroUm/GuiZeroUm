@@ -178,23 +178,18 @@ def load_sprites() -> list[Image.Image]:
 
 def render_field(base: Image.Image, weeks: list[list[Day]]) -> Image.Image:
     x0, y0, x1, y1 = FIELD
-    sprites = load_sprites()
+    # Largest square cell that fits the field: the grid stays square (never
+    # stretched) and is centred in the plantation area. A field shaped close
+    # to 53:7 fills completely; a taller field keeps soil margins.
+    side = int(min((x1 - x0) / WEEKS, (y1 - y0) / DAYS))
+    grid_w, grid_h = side * WEEKS, side * DAYS
+    ox = x0 + ((x1 - x0) - grid_w) // 2
+    oy = y0 + ((y1 - y0) - grid_h) // 2
+    sprites = [s.resize((side, side), Image.Resampling.LANCZOS) for s in load_sprites()]
     canvas = base.convert("RGBA")
-    cache: dict[tuple[int, int, int], Image.Image] = {}
     for wi, week in enumerate(weeks):
-        # Integer cell edges from float boundaries so cells tile with no gaps.
-        cx0 = round(x0 + wi * (x1 - x0) / WEEKS)
-        cx1 = round(x0 + (wi + 1) * (x1 - x0) / WEEKS)
         for wd, day in enumerate(week):
-            cy0 = round(y0 + wd * (y1 - y0) / DAYS)
-            cy1 = round(y0 + (wd + 1) * (y1 - y0) / DAYS)
-            idx = stage(day.count)
-            key = (idx, cx1 - cx0, cy1 - cy0)
-            sprite = cache.get(key)
-            if sprite is None:
-                sprite = sprites[idx].resize((cx1 - cx0, cy1 - cy0), Image.Resampling.LANCZOS)
-                cache[key] = sprite
-            canvas.alpha_composite(sprite, (cx0, cy0))
+            canvas.alpha_composite(sprites[stage(day.count)], (ox + wi * side, oy + wd * side))
     return canvas.convert("RGB")
 
 
