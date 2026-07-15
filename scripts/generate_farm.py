@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 """Transform GuiZeroUm's GitHub contributions into a pixel-art farm.
 
-The base art (assets/farm-base.png) stays untouched except for the central
-crop field: that region is repainted as a real 53x7 contribution calendar,
-where each day's activity level decides how far its crop has grown.
+The base art (assets/farm-base.png) keeps an empty plowed field in the
+middle. This script tiles that field with a 53x7 grid of crop sprites,
+where each cell is one day and its sprite shows how much wheat grew:
+
+    0 commits   -> 1.png  (bare soil)
+    1 commit    -> 2.png  (sprout)
+    2-3 commits -> 3.png  (growing wheat)
+    4-7 commits -> 4.png  (ripe wheat)
+    8+ commits  -> 5.png  (golden wheat)
+
+Sprites are square and pasted without stretching.
 """
 from __future__ import annotations
 
@@ -17,10 +25,11 @@ from datetime import date, datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = ROOT / "assets" / "farm-base.png"
+CROPS = ROOT / "assets" / "crops"
 OUTPUT = ROOT / "assets" / "farm-contributions.svg"
 META = ROOT / "assets" / "farm-meta.json"
 
@@ -29,45 +38,34 @@ TOKEN = os.getenv("GITHUB_TOKEN", "")
 
 WEEKS, DAYS = 53, 7
 
-# Crop-field rectangle inside the base art, in native (1942x809) pixels.
-FIELD = (416, 223, 1743, 602)
+# Plowed-field rectangle inside the base art, in native (1942x809) pixels.
+FIELD = (422, 208, 1742, 612)
 
 # Width of the exported image; smaller keeps the README SVG light.
-OUTPUT_WIDTH = 1300
+OUTPUT_WIDTH = 1600
 
-# GitHub contributionLevel -> internal growth stage.
-LEVELS = {
-    "NONE": 0,
-    "FIRST_QUARTILE": 1,
-    "SECOND_QUARTILE": 2,
-    "THIRD_QUARTILE": 3,
-    "FOURTH_QUARTILE": 4,
-}
-
-# Palette sampled to match the base art's soil and crops.
-C = {
-    "bed_edge": (78, 45, 30),
-    "soil": (150, 96, 58),
-    "soil_hi": (182, 124, 78),
-    "furrow": (120, 74, 46),
-    "green_lo": (58, 104, 30),
-    "green": (96, 150, 34),
-    "green_hi": (150, 190, 60),
-    "wheat_lo": (168, 116, 44),
-    "wheat": (222, 168, 62),
-    "wheat_hi": (247, 214, 108),
-}
-
-# Fraction of each bed covered by foliage, per growth stage.
-COVER = {1: 0.34, 2: 0.60, 3: 0.86, 4: 0.94}
+# Sprite files, ordered by growth stage (index 0 = bare soil).
+SPRITE_FILES = ["1.png", "2.png", "3.png", "4.png", "5.png"]
 
 
 @dataclass(frozen=True)
 class Day:
     value: date | None
     count: int
-    level: int
     future: bool = False
+
+
+def stage(count: int) -> int:
+    """Map a day's contribution count to a sprite index (0-4)."""
+    if count <= 0:
+        return 0
+    if count == 1:
+        return 1
+    if count <= 3:
+        return 2
+    if count <= 7:
+        return 3
+    return 4
 
 
 def graphql(query: str, variables: dict) -> dict:
@@ -98,7 +96,7 @@ def contributions(username: str) -> tuple[list[list[Day]], int]:
         "query($login:String!,$from:DateTime!,$to:DateTime!){"
         "user(login:$login){contributionsCollection(from:$from,to:$to){"
         "contributionCalendar{totalContributions weeks{contributionDays{"
-        "date weekday contributionCount contributionLevel}}}}}}"
+        "date weekday contributionCount}}}}}}"
     )
     data = graphql(
         query,
@@ -106,18 +104,13 @@ def contributions(username: str) -> tuple[list[list[Day]], int]:
     )
     calendar = data["user"]["contributionsCollection"]["contributionCalendar"]
     raw = calendar["weeks"][-WEEKS:]
-    weeks = [[Day(None, 0, 0) for _ in range(DAYS)] for _ in range(WEEKS - len(raw))]
+    weeks = [[Day(None, 0) for _ in range(DAYS)] for _ in range(WEEKS - len(raw))]
     for source in raw:
-        week = [Day(None, 0, 0) for _ in range(DAYS)]
+        week = [Day(None, 0) for _ in range(DAYS)]
         for item in source["contributionDays"]:
             d = date.fromisoformat(item["date"])
             weekday = int(item["weekday"])
-            week[weekday] = Day(
-                d,
-                int(item["contributionCount"]),
-                LEVELS[item["contributionLevel"]],
-                d > today,
-            )
+            week[weekday] = Day(d, int(item["contributionCount"]), d > today)
         weeks.append(week)
     return weeks[-WEEKS:], int(calendar["totalContributions"])
 
@@ -131,19 +124,18 @@ def demo() -> tuple[list[list[Day]], int]:
         for wd in range(DAYS):
             d = first + timedelta(weeks=wi, days=wd)
             signal = (wi * 17 + wd * 11 + d.toordinal()) % 23
-            level = (
+            count = (0, 1, 3, 6, 11)[
                 0 if signal < 7
                 else 1 if signal < 11
                 else 2 if signal < 16
                 else 3 if signal < 20
                 else 4
-            )
-            count = (0, 1, 3, 6, 11)[level]
+            ]
             future = d > today
             if future:
-                level, count = 0, 0
+                count = 0
             total += count
-            week.append(Day(d, count, level, future))
+            week.append(Day(d, count, future))
         weeks.append(week)
     return weeks, total
 
@@ -165,77 +157,45 @@ def streaks(weeks: list[list[Day]]) -> tuple[int, int, int]:
         previous = d.value
     lookup = {d.value: d for d in days}
     cursor = date.today()
-    if lookup.get(cursor, Day(cursor, 0, 0)).count == 0:
+    if lookup.get(cursor, Day(cursor, 0)).count == 0:
         cursor -= timedelta(days=1)
     current = 0
-    while lookup.get(cursor, Day(cursor, 0, 0)).count > 0:
+    while lookup.get(cursor, Day(cursor, 0)).count > 0:
         current += 1
         cursor -= timedelta(days=1)
     return active, best, current
 
 
-def leafy(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int]) -> None:
-    """Fill a bed region with a dense, textured green canopy (top-down bushes)."""
-    x0, y0, x1, y1 = box
-    draw.rounded_rectangle((x0, y0, x1, y1), radius=4, fill=C["green_lo"])
-    step = 4
-    toggle = 0
-    by = y0 + 2
-    while by <= y1:
-        bx = x0 + 2 + (2 if toggle else 0)
-        while bx <= x1:
-            draw.ellipse((bx - 3, by - 3, bx + 3, by + 3), fill=C["green"])
-            draw.ellipse((bx - 3, by - 3, bx, by), fill=C["green_hi"])
-            bx += step
-        by += step
-        toggle ^= 1
+def load_sprites() -> list[Image.Image]:
+    sprites = []
+    for name in SPRITE_FILES:
+        path = CROPS / name
+        if not path.exists():
+            raise RuntimeError(f"Missing crop sprite: {path}")
+        sprites.append(Image.open(path).convert("RGBA"))
+    return sprites
 
 
-def wheaty(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int]) -> None:
-    """Fill a bed region with packed golden wheat stalks and grain heads."""
-    x0, y0, x1, y1 = box
-    draw.rounded_rectangle((x0, y0, x1, y1), radius=3, fill=C["wheat_lo"])
-    sx = x0 + 2
-    flip = 0
-    while sx <= x1:
-        top = y0 + (1 if flip else 3)
-        draw.line((sx, y1 - 1, sx, top + 2), fill=C["wheat_lo"], width=2)
-        draw.ellipse((sx - 2, top, sx + 2, top + 6), fill=C["wheat"])
-        draw.ellipse((sx - 1, top, sx + 1, top + 3), fill=C["wheat_hi"])
-        sx += 3
-        flip ^= 1
-
-
-def tile(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], level: int, future: bool) -> None:
-    x0, y0, x1, y1 = box
-    w, h = x1 - x0, y1 - y0
-    # Plowed soil bed with a dark rim, a lit top edge and horizontal furrows.
-    draw.rectangle((x0, y0, x1, y1), fill=C["bed_edge"])
-    draw.rectangle((x0 + 1, y0 + 1, x1 - 1, y1 - 1), fill=C["soil"])
-    draw.line((x0 + 2, y0 + 2, x1 - 2, y0 + 2), fill=C["soil_hi"])
-    for fy in range(y0 + 5, y1 - 1, 5):
-        draw.line((x0 + 2, fy, x1 - 2, fy), fill=C["furrow"])
-    if future or level == 0:
-        return
-    # Foliage fills the bed from the bottom up, taller with more activity.
-    fh = max(4, int((h - 3) * COVER[level]))
-    crop = (x0 + 1, y1 - 1 - fh, x1 - 1, y1 - 1)
-    (wheaty if level == 4 else leafy)(draw, crop)
-
-
-def render_field(image: Image.Image, weeks: list[list[Day]]) -> None:
-    draw = ImageDraw.Draw(image)
+def render_field(base: Image.Image, weeks: list[list[Day]]) -> Image.Image:
     x0, y0, x1, y1 = FIELD
-    col_w = (x1 - x0) / WEEKS
-    row_h = (y1 - y0) / DAYS
-    pad = 2
+    sprites = load_sprites()
+    canvas = base.convert("RGBA")
+    cache: dict[tuple[int, int, int], Image.Image] = {}
     for wi, week in enumerate(weeks):
+        # Integer cell edges from float boundaries so cells tile with no gaps.
+        cx0 = round(x0 + wi * (x1 - x0) / WEEKS)
+        cx1 = round(x0 + (wi + 1) * (x1 - x0) / WEEKS)
         for wd, day in enumerate(week):
-            cx0 = round(x0 + wi * col_w) + pad
-            cy0 = round(y0 + wd * row_h) + pad
-            cx1 = round(x0 + (wi + 1) * col_w) - pad
-            cy1 = round(y0 + (wd + 1) * row_h) - pad
-            tile(draw, (cx0, cy0, cx1, cy1), day.level, day.future)
+            cy0 = round(y0 + wd * (y1 - y0) / DAYS)
+            cy1 = round(y0 + (wd + 1) * (y1 - y0) / DAYS)
+            idx = stage(day.count)
+            key = (idx, cx1 - cx0, cy1 - cy0)
+            sprite = cache.get(key)
+            if sprite is None:
+                sprite = sprites[idx].resize((cx1 - cx0, cy1 - cy0), Image.Resampling.LANCZOS)
+                cache[key] = sprite
+            canvas.alpha_composite(sprite, (cx0, cy0))
+    return canvas.convert("RGB")
 
 
 def export(image: Image.Image) -> None:
@@ -290,8 +250,8 @@ def main() -> None:
         raise RuntimeError(f"Base art not found: {BASE}")
 
     weeks, total = demo() if args.demo else contributions(args.username)
-    image = Image.open(BASE).convert("RGB")
-    render_field(image, weeks)
+    base = Image.open(BASE).convert("RGB")
+    image = render_field(base, weeks)
     export(image)
     write_meta(args.username, total, weeks)
     print(f"Rendered {total} contributions for @{args.username}")

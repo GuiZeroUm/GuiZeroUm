@@ -6,28 +6,30 @@ A fazenda do perfil transforma o calendário de contribuições do GitHub em uma
 
 ```text
 assets/
-├── farm-base.png           # Arte-base da fazenda (cenário fixo)
+├── farm-base.png           # Arte-base da fazenda (campo central vazio)
+├── crops/                  # Sprites de crescimento do trigo (1.png … 5.png)
 ├── farm-contributions.svg  # Arte gerada e exibida no README
 └── farm-meta.json          # Estatísticas da última geração
 scripts/
-└── generate_farm.py        # Consulta o GitHub e repinta apenas a plantação
+└── generate_farm.py        # Consulta o GitHub e preenche o campo com as sprites
 .github/workflows/
 └── update-farm.yml         # Atualização diária e execução manual
 ```
 
-Apenas o retângulo central (o campo de plantação) é redesenhado a cada
-execução. Todo o resto do cenário — casa, placa, lago, animais, celeiro —
-permanece exatamente como na arte-base.
+Apenas o retângulo central (o campo de plantação) é preenchido a cada
+execução: uma grade de **53 × 7** células, onde cada célula recebe uma das
+sprites de `crops/` conforme o número de commits do dia. Todo o resto do
+cenário — casa, placa, lago, animais, celeiro — permanece como na arte-base.
 
 ## Estágios da plantação
 
-| Nível do GitHub | Aparência |
-|---|---|
-| `NONE` | Terra arada |
-| `FIRST_QUARTILE` | Broto |
-| `SECOND_QUARTILE` | Plantação jovem |
-| `THIRD_QUARTILE` | Trigo verde |
-| `FOURTH_QUARTILE` | Trigo dourado |
+| Commits no dia | Sprite | Aparência |
+|---|---|---|
+| 0 | `1.png` | Terra arada |
+| 1 | `2.png` | Broto |
+| 2 – 3 | `3.png` | Trigo crescendo |
+| 4 – 7 | `4.png` | Trigo maduro |
+| 8+ | `5.png` | Trigo dourado |
 
 ## Execução local
 

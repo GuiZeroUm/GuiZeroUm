@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - "assets/farm-base.png"
+      - "assets/crops/**"
       - "scripts/generate_farm.py"
       - ".github/workflows/update-farm.yml"
 

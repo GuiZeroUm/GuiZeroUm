@@ -39,15 +39,15 @@ Meu foco está em arquitetura sustentável, código limpo, integrações e produ
 
 ## 🌾 Como funciona esta fazenda
 
-A área central da arte é um calendário real de **53 semanas × 7 dias**. O workflow consulta suas contribuições pelo GitHub GraphQL, converte cada nível de atividade em um estágio da plantação e redesenha a fazenda automaticamente:
+A área central da arte é um calendário real de **53 semanas × 7 dias**. O workflow consulta suas contribuições pelo GitHub GraphQL, converte o número de commits de cada dia em um estágio da plantação e redesenha a fazenda automaticamente:
 
-| Atividade no dia | Representação |
+| Commits no dia | Representação |
 |:--|:--|
-| Nenhuma contribuição | Terra arada |
-| Baixa atividade | Pequeno broto |
-| Atividade moderada | Plantação jovem |
-| Alta atividade | Trigo verde desenvolvido |
-| Atividade muito alta | Trigo dourado pronto para colheita |
+| 0 | Terra arada |
+| 1 | Pequeno broto |
+| 2 – 3 | Trigo crescendo |
+| 4 – 7 | Trigo maduro |
+| 8 ou mais | Trigo dourado |
 
 O gerador, o workflow e toda a lógica visual estão disponíveis neste próprio repositório de perfil.
 
