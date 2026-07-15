@@ -1,25 +1,66 @@
 #!/usr/bin/env python3
-"""Transform GuiZeroUm's GitHub contributions into a pixel-art farm."""
+"""Transform GuiZeroUm's GitHub contributions into a pixel-art farm.
+
+The base art (assets/farm-base.png) stays untouched except for the central
+crop field: that region is repainted as a real 53x7 contribution calendar,
+where each day's activity level decides how far its crop has grown.
+"""
 from __future__ import annotations
 
-import argparse, base64, json, os, urllib.request
+import argparse
+import json
+import os
+import urllib.request
+from base64 import b64encode
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from io import BytesIO
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont
+
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-PARTS = ROOT / "assets" / "farm-base"
+BASE = ROOT / "assets" / "farm-base.png"
 OUTPUT = ROOT / "assets" / "farm-contributions.svg"
 META = ROOT / "assets" / "farm-meta.json"
+
 USER = os.getenv("GITHUB_USERNAME", "GuiZeroUm")
 TOKEN = os.getenv("GITHUB_TOKEN", "")
+
 WEEKS, DAYS = 53, 7
-W, H = 1200, 500
-GRID_X, GRID_Y, CELL, GAP = 254, 180, 12, 3
-LEVELS = {"NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2, "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4}
-C = {"ink":"#3d2423","shadow":"#241719","wood":"#9a5534","wood_d":"#6b3428","wood_l":"#d28a4a","soil":"#7b3e2e","soil_d":"#5f3027","soil_l":"#a75a38","furrow":"#4b2925","green_d":"#2f6b2d","green":"#55a83b","leaf":"#79c83d","wheat_d":"#b56b24","wheat":"#f1b735","wheat_l":"#ffd75a","cream":"#ffe7a6","paper":"#f4d58a"}
+
+# Crop-field rectangle inside the base art, in native (1942x809) pixels.
+FIELD = (416, 223, 1743, 602)
+
+# Width of the exported image; smaller keeps the README SVG light.
+OUTPUT_WIDTH = 1300
+
+# GitHub contributionLevel -> internal growth stage.
+LEVELS = {
+    "NONE": 0,
+    "FIRST_QUARTILE": 1,
+    "SECOND_QUARTILE": 2,
+    "THIRD_QUARTILE": 3,
+    "FOURTH_QUARTILE": 4,
+}
+
+# Palette sampled to match the base art's soil and crops.
+C = {
+    "bed_edge": (78, 45, 30),
+    "soil": (150, 96, 58),
+    "soil_hi": (182, 124, 78),
+    "furrow": (120, 74, 46),
+    "green_lo": (58, 104, 30),
+    "green": (96, 150, 34),
+    "green_hi": (150, 190, 60),
+    "wheat_lo": (168, 116, 44),
+    "wheat": (222, 168, 62),
+    "wheat_hi": (247, 214, 108),
+}
+
+# Fraction of each bed covered by foliage, per growth stage.
+COVER = {1: 0.34, 2: 0.60, 3: 0.86, 4: 0.94}
+
 
 @dataclass(frozen=True)
 class Day:
@@ -31,8 +72,17 @@ class Day:
 
 def graphql(query: str, variables: dict) -> dict:
     if not TOKEN:
-        raise RuntimeError("GITHUB_TOKEN is required")
-    req = urllib.request.Request("https://api.github.com/graphql", data=json.dumps({"query": query, "variables": variables}).encode(), headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json", "User-Agent": "guizeroum-farm"})
+        raise RuntimeError("GITHUB_TOKEN is required (use --demo for a preview)")
+    body = json.dumps({"query": query, "variables": variables}).encode()
+    req = urllib.request.Request(
+        "https://api.github.com/graphql",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {TOKEN}",
+            "Content-Type": "application/json",
+            "User-Agent": "guizeroum-farm",
+        },
+    )
     with urllib.request.urlopen(req, timeout=30) as response:
         payload = json.loads(response.read())
     if payload.get("errors"):
@@ -42,9 +92,18 @@ def graphql(query: str, variables: dict) -> dict:
 
 def contributions(username: str) -> tuple[list[list[Day]], int]:
     today = datetime.now(timezone.utc).date()
-    start = today - timedelta(days=380)
-    query = """query($login:String!,$from:DateTime!,$to:DateTime!){user(login:$login){contributionsCollection(from:$from,to:$to){contributionCalendar{totalContributions weeks{contributionDays{date weekday contributionCount contributionLevel}}}}}}"""
-    data = graphql(query, {"login": username, "from": f"{start}T00:00:00Z", "to": f"{today}T23:59:59Z"})
+    # GitHub's contributionsCollection window may not exceed one year.
+    start = today - timedelta(days=364)
+    query = (
+        "query($login:String!,$from:DateTime!,$to:DateTime!){"
+        "user(login:$login){contributionsCollection(from:$from,to:$to){"
+        "contributionCalendar{totalContributions weeks{contributionDays{"
+        "date weekday contributionCount contributionLevel}}}}}}"
+    )
+    data = graphql(
+        query,
+        {"login": username, "from": f"{start}T00:00:00Z", "to": f"{today}T23:59:59Z"},
+    )
     calendar = data["user"]["contributionsCollection"]["contributionCalendar"]
     raw = calendar["weeks"][-WEEKS:]
     weeks = [[Day(None, 0, 0) for _ in range(DAYS)] for _ in range(WEEKS - len(raw))]
@@ -53,7 +112,12 @@ def contributions(username: str) -> tuple[list[list[Day]], int]:
         for item in source["contributionDays"]:
             d = date.fromisoformat(item["date"])
             weekday = int(item["weekday"])
-            week[weekday] = Day(d, int(item["contributionCount"]), LEVELS[item["contributionLevel"]], d > today)
+            week[weekday] = Day(
+                d,
+                int(item["contributionCount"]),
+                LEVELS[item["contributionLevel"]],
+                d > today,
+            )
         weeks.append(week)
     return weeks[-WEEKS:], int(calendar["totalContributions"])
 
@@ -67,90 +131,171 @@ def demo() -> tuple[list[list[Day]], int]:
         for wd in range(DAYS):
             d = first + timedelta(weeks=wi, days=wd)
             signal = (wi * 17 + wd * 11 + d.toordinal()) % 23
-            level = 0 if signal < 7 else 1 if signal < 11 else 2 if signal < 16 else 3 if signal < 20 else 4
+            level = (
+                0 if signal < 7
+                else 1 if signal < 11
+                else 2 if signal < 16
+                else 3 if signal < 20
+                else 4
+            )
             count = (0, 1, 3, 6, 11)[level]
-            if d > today: level, count = 0, 0
+            future = d > today
+            if future:
+                level, count = 0, 0
             total += count
-            week.append(Day(d, count, level, d > today))
+            week.append(Day(d, count, level, future))
         weeks.append(week)
     return weeks, total
 
 
-def font(size: int):
-    for name in ("DejaVuSansMono-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"):
-        try: return ImageFont.truetype(name, size)
-        except OSError: pass
-    return ImageFont.load_default()
-
-
-def center(draw, box, text, size, fill, stroke=None):
-    f = font(size); bounds = draw.textbbox((0, 0), text, font=f, stroke_width=1 if stroke else 0)
-    x = box[0] + (box[2] - box[0] - (bounds[2] - bounds[0])) // 2
-    y = box[1] + (box[3] - box[1] - (bounds[3] - bounds[1])) // 2 - bounds[1]
-    draw.text((x, y), text, font=f, fill=fill, stroke_fill=stroke, stroke_width=1 if stroke else 0)
-
-
-def tile(draw, x, y, level, future=False):
-    r, b = x + CELL - 1, y + CELL - 1
-    draw.rectangle((x,y,r,b), fill=C["ink"]); draw.rectangle((x+1,y+1,r-1,b-1), fill=C["soil_d"]); draw.rectangle((x+2,y+2,r-2,b-2), fill=C["soil"])
-    draw.line((x+3,y+5,r-3,y+5), fill=C["furrow"]); draw.line((x+3,y+8,r-3,y+8), fill=C["soil_l"])
-    if future: return
-    cx, base = x + 6, y + 10
-    if level == 0: draw.point((cx, base-3), fill=C["wood_l"])
-    elif level == 1:
-        draw.line((cx,base,cx,base-3), fill=C["green_d"]); draw.rectangle((cx-2,base-3,cx,base-2), fill=C["green"]); draw.point((cx+2,base-4), fill=C["leaf"])
-    elif level == 2:
-        draw.line((cx,base,cx,base-6), fill=C["green_d"]); draw.rectangle((cx-3,base-4,cx,base-3), fill=C["green"]); draw.rectangle((cx+1,base-6,cx+3,base-5), fill=C["leaf"])
-    elif level == 3:
-        for off in (-3,0,3):
-            draw.line((cx+off,base,cx+off,base-7), fill=C["green_d"]); draw.point((cx+off-1,base-4), fill=C["leaf"]); draw.point((cx+off+1,base-6), fill=C["green"])
-    else:
-        for off in (-3,0,3):
-            stem = cx + off; draw.line((stem,base,stem,base-7), fill=C["wheat_d"]); draw.rectangle((stem-1,base-9,stem+1,base-7), fill=C["wheat"]); draw.point((stem,base-10), fill=C["wheat_l"])
-
-
-def streaks(weeks):
-    days = sorted((d for week in weeks for d in week if d.value and not d.future), key=lambda d: d.value)
-    active, best, run, previous = sum(d.count > 0 for d in days), 0, 0, None
+def streaks(weeks: list[list[Day]]) -> tuple[int, int, int]:
+    days = sorted(
+        (d for week in weeks for d in week if d.value and not d.future),
+        key=lambda d: d.value,
+    )
+    active = sum(d.count > 0 for d in days)
+    best = run = 0
+    previous: date | None = None
     for d in days:
-        run = run + 1 if d.count > 0 and previous and d.value == previous + timedelta(days=1) else (1 if d.count > 0 else 0)
-        best = max(best, run); previous = d.value
-    lookup = {d.value:d for d in days}; cursor = date.today()
-    if lookup.get(cursor, Day(cursor,0,0)).count == 0: cursor -= timedelta(days=1)
+        if d.count > 0 and previous and d.value == previous + timedelta(days=1):
+            run += 1
+        else:
+            run = 1 if d.count > 0 else 0
+        best = max(best, run)
+        previous = d.value
+    lookup = {d.value: d for d in days}
+    cursor = date.today()
+    if lookup.get(cursor, Day(cursor, 0, 0)).count == 0:
+        cursor -= timedelta(days=1)
     current = 0
-    while lookup.get(cursor, Day(cursor,0,0)).count > 0: current += 1; cursor -= timedelta(days=1)
+    while lookup.get(cursor, Day(cursor, 0, 0)).count > 0:
+        current += 1
+        cursor -= timedelta(days=1)
     return active, best, current
 
 
-def load_base():
-    files = sorted(PARTS.glob("part-*.b64"))
-    if not files: raise RuntimeError(f"No image parts in {PARTS}")
-    encoded = "".join(p.read_text().strip() for p in files)
-    image = Image.open(BytesIO(base64.b64decode(encoded))).convert("RGB")
-    return image.resize((W,H), Image.Resampling.LANCZOS)
+def leafy(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int]) -> None:
+    """Fill a bed region with a dense, textured green canopy (top-down bushes)."""
+    x0, y0, x1, y1 = box
+    draw.rounded_rectangle((x0, y0, x1, y1), radius=4, fill=C["green_lo"])
+    step = 4
+    toggle = 0
+    by = y0 + 2
+    while by <= y1:
+        bx = x0 + 2 + (2 if toggle else 0)
+        while bx <= x1:
+            draw.ellipse((bx - 3, by - 3, bx + 3, by + 3), fill=C["green"])
+            draw.ellipse((bx - 3, by - 3, bx, by), fill=C["green_hi"])
+            bx += step
+        by += step
+        toggle ^= 1
 
 
-def render(weeks, total):
-    image = load_base(); draw = ImageDraw.Draw(image)
-    panel = (242,125,1060,379)
-    draw.rectangle((247,131,1065,385), fill=C["shadow"]); draw.rectangle(panel, fill=C["ink"]); draw.rectangle((245,128,1057,376), fill=C["wood_d"]); draw.rectangle((249,132,1053,372), fill=C["soil"])
-    plaque=(465,135,838,172); draw.rectangle((468,138,841,175), fill=C["shadow"]); draw.rectangle(plaque, fill=C["ink"]); draw.rectangle((469,139,834,168), fill=C["wood"]); center(draw, plaque, "CONTRIBUTION HARVEST", 15, C["cream"], C["ink"])
+def wheaty(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int]) -> None:
+    """Fill a bed region with packed golden wheat stalks and grain heads."""
+    x0, y0, x1, y1 = box
+    draw.rounded_rectangle((x0, y0, x1, y1), radius=3, fill=C["wheat_lo"])
+    sx = x0 + 2
+    flip = 0
+    while sx <= x1:
+        top = y0 + (1 if flip else 3)
+        draw.line((sx, y1 - 1, sx, top + 2), fill=C["wheat_lo"], width=2)
+        draw.ellipse((sx - 2, top, sx + 2, top + 6), fill=C["wheat"])
+        draw.ellipse((sx - 1, top, sx + 1, top + 3), fill=C["wheat_hi"])
+        sx += 3
+        flip ^= 1
+
+
+def tile(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], level: int, future: bool) -> None:
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    # Plowed soil bed with a dark rim, a lit top edge and horizontal furrows.
+    draw.rectangle((x0, y0, x1, y1), fill=C["bed_edge"])
+    draw.rectangle((x0 + 1, y0 + 1, x1 - 1, y1 - 1), fill=C["soil"])
+    draw.line((x0 + 2, y0 + 2, x1 - 2, y0 + 2), fill=C["soil_hi"])
+    for fy in range(y0 + 5, y1 - 1, 5):
+        draw.line((x0 + 2, fy, x1 - 2, fy), fill=C["furrow"])
+    if future or level == 0:
+        return
+    # Foliage fills the bed from the bottom up, taller with more activity.
+    fh = max(4, int((h - 3) * COVER[level]))
+    crop = (x0 + 1, y1 - 1 - fh, x1 - 1, y1 - 1)
+    (wheaty if level == 4 else leafy)(draw, crop)
+
+
+def render_field(image: Image.Image, weeks: list[list[Day]]) -> None:
+    draw = ImageDraw.Draw(image)
+    x0, y0, x1, y1 = FIELD
+    col_w = (x1 - x0) / WEEKS
+    row_h = (y1 - y0) / DAYS
+    pad = 2
     for wi, week in enumerate(weeks):
-        for wd, d in enumerate(week): tile(draw, GRID_X + wi*(CELL+GAP), GRID_Y + wd*(CELL+GAP), d.level, d.future)
+        for wd, day in enumerate(week):
+            cx0 = round(x0 + wi * col_w) + pad
+            cy0 = round(y0 + wd * row_h) + pad
+            cx1 = round(x0 + (wi + 1) * col_w) - pad
+            cy1 = round(y0 + (wd + 1) * row_h) - pad
+            tile(draw, (cx0, cy0, cx1, cy1), day.level, day.future)
+
+
+def export(image: Image.Image) -> None:
+    if OUTPUT_WIDTH and image.width != OUTPUT_WIDTH:
+        height = round(image.height * OUTPUT_WIDTH / image.width)
+        image = image.resize((OUTPUT_WIDTH, height), Image.Resampling.LANCZOS)
+    quantized = image.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+    buffer = BytesIO()
+    quantized.save(buffer, format="PNG", optimize=True)
+    encoded = b64encode(buffer.getvalue()).decode()
+    OUTPUT.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" '
+        f'viewBox="0 0 {image.width} {image.height}" role="img">'
+        "<title>GuiZeroUm contribution farm</title>"
+        f'<image width="{image.width}" height="{image.height}" '
+        f'href="data:image/png;base64,{encoded}"/></svg>'
+    )
+
+
+def write_meta(username: str, total: int, weeks: list[list[Day]]) -> None:
     active, best, current = streaks(weeks)
-    cards=((str(total),"CONTRIBUICOES"),(str(active),"DIAS ATIVOS"),(str(best),"MELHOR SEQUENCIA"),(str(current),"SEQUENCIA ATUAL"))
-    start, cw = 280, 145
-    for i,(value,label) in enumerate(cards):
-        left=start+i*160; box=(left,310,left+cw,359); draw.rectangle((left+3,313,left+cw+3,362), fill=C["shadow"]); draw.rectangle(box, fill=C["ink"]); draw.rectangle((left+5,315,left+cw-5,354), fill=C["paper"]); center(draw,(left,312,left+cw,335),value,13,C["ink"]); center(draw,(left,334,left+cw,356),label,7,C["ink"])
-    buffer=BytesIO(); image.save(buffer, format="PNG", optimize=True)
-    encoded=base64.b64encode(buffer.getvalue()).decode()
-    OUTPUT.write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" role="img"><title>GuiZeroUm contribution farm</title><image width="{W}" height="{H}" href="data:image/png;base64,{encoded}"/></svg>')
-    META.write_text(json.dumps({"username":USER,"generated_at":datetime.now(timezone.utc).isoformat(),"stats":{"total_contributions":total,"active_days":active,"best_streak":best,"current_streak":current}}, indent=2))
+    dated = [d.value for week in weeks for d in week if d.value]
+    META.write_text(
+        json.dumps(
+            {
+                "username": username,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "period": {
+                    "from": min(dated).isoformat() if dated else None,
+                    "to": max(dated).isoformat() if dated else None,
+                },
+                "dimensions": {"weeks": WEEKS, "days": DAYS},
+                "stats": {
+                    "total_contributions": total,
+                    "active_days": active,
+                    "best_streak": best,
+                    "current_streak": current,
+                },
+            },
+            indent=2,
+        )
+    )
 
 
-def main():
-    parser=argparse.ArgumentParser(); parser.add_argument("--demo", action="store_true"); parser.add_argument("--username", default=USER); args=parser.parse_args()
-    weeks,total = demo() if args.demo else contributions(args.username)
-    render(weeks,total); print(f"Rendered {total} contributions for @{args.username}")
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Render the GuiZeroUm contribution farm")
+    parser.add_argument("--demo", action="store_true", help="use synthetic data, no API call")
+    parser.add_argument("--username", default=USER)
+    args = parser.parse_args()
 
-if __name__ == "__main__": main()
+    if not BASE.exists():
+        raise RuntimeError(f"Base art not found: {BASE}")
+
+    weeks, total = demo() if args.demo else contributions(args.username)
+    image = Image.open(BASE).convert("RGB")
+    render_field(image, weeks)
+    export(image)
+    write_meta(args.username, total, weeks)
+    print(f"Rendered {total} contributions for @{args.username}")
+
+
+if __name__ == "__main__":
+    main()

@@ -8,7 +8,7 @@ on:
     branches:
       - main
     paths:
-      - "assets/farm-base/**"
+      - "assets/farm-base.png"
       - "scripts/generate_farm.py"
       - ".github/workflows/update-farm.yml"
 

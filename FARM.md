@@ -6,14 +6,18 @@ A fazenda do perfil transforma o calendário de contribuições do GitHub em uma
 
 ```text
 assets/
-├── farm-base/              # Arte-base dividida em partes base64
+├── farm-base.png           # Arte-base da fazenda (cenário fixo)
 ├── farm-contributions.svg  # Arte gerada e exibida no README
 └── farm-meta.json          # Estatísticas da última geração
 scripts/
-└── generate_farm.py        # Consulta o GitHub e renderiza a plantação
+└── generate_farm.py        # Consulta o GitHub e repinta apenas a plantação
 .github/workflows/
 └── update-farm.yml         # Atualização diária e execução manual
 ```
+
+Apenas o retângulo central (o campo de plantação) é redesenhado a cada
+execução. Todo o resto do cenário — casa, placa, lago, animais, celeiro —
+permanece exatamente como na arte-base.
 
 ## Estágios da plantação
 
