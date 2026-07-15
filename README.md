@@ -37,20 +37,6 @@ Meu foco está em arquitetura sustentável, código limpo, integrações e produ
   <img src="https://skillicons.dev/icons?i=python,django,php,laravel,js,ts,react,vue,tailwind,bootstrap,postgres,mongodb,docker,git,github,linux&perline=8" alt="Tecnologias utilizadas por Guilherme Santos" />
 </p>
 
-## 🌾 Como funciona esta fazenda
-
-A área central da arte é um calendário real de **53 semanas × 7 dias**. O workflow consulta suas contribuições pelo GitHub GraphQL, converte o número de commits de cada dia em um estágio da plantação e redesenha a fazenda automaticamente:
-
-| Commits no dia | Representação |
-|:--|:--|
-| 0 | Terra arada |
-| 1 | Pequeno broto |
-| 2 – 3 | Trigo crescendo |
-| 4 – 7 | Trigo maduro |
-| 8 ou mais | Trigo dourado |
-
-O gerador, o workflow e toda a lógica visual estão disponíveis neste próprio repositório de perfil.
-
 <p align="center">
   <em>Construindo um pouco todos os dias — uma contribuição, uma colheita. 🌾</em>
 </p>
