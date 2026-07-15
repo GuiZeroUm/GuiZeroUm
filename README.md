@@ -38,5 +38,5 @@ Meu foco está em arquitetura sustentável, código limpo, integrações e produ
 </p>
 
 <p align="center">
-  <em>Construindo um pouco todos os dias — uma contribuição, uma colheita. 🌾</em>
+  <em>Plantando um pouco minha evolução todos os dias 🌾</em>
 </p>
