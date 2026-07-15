@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+<title id="title">GuiZeroUm Contribution Farm</title>
+<desc id="desc">A fazenda será atualizada automaticamente com as contribuições do GitHub.</desc>
+<rect width="1200" height="500" fill="#9ecf63"/>
+<rect x="110" y="80" width="980" height="340" rx="12" fill="#6b3428"/>
+<rect x="125" y="95" width="950" height="310" rx="8" fill="#a75a38"/>
+<text x="600" y="220" text-anchor="middle" font-family="monospace" font-size="42" font-weight="700" fill="#ffe7a6">GuiZeroUm Farm</text>
+<text x="600" y="275" text-anchor="middle" font-family="monospace" font-size="24" fill="#3d2423">Preparando a próxima colheita...</text>
+</svg>
