@@ -1,17 +1,17 @@
 {
   "username": "GuiZeroUm",
-  "generated_at": "2026-11-10T12:41:51.238464+00:00",
+  "generated_at": "2026-11-11T11:54:32.014953+00:00",
   "period": {
-    "from": "2025-11-11",
-    "to": "2026-11-10"
+    "from": "2025-11-12",
+    "to": "2026-11-11"
   },
   "dimensions": {
     "weeks": 53,
     "days": 7
   },
   "stats": {
-    "total_contributions": 1067,
-    "active_days": 143,
+    "total_contributions": 1065,
+    "active_days": 142,
     "best_streak": 8,
     "current_streak": 0
   }
